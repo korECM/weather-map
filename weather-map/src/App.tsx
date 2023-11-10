@@ -2,9 +2,41 @@ import {useEffect, useState} from "react";
 import {Body, Cell, Header, HeaderCell, HeaderRow, Row, Table,} from '@table-library/react-table-library/table';
 import {useTheme} from '@table-library/react-table-library/theme';
 import {getTheme} from '@table-library/react-table-library/baseline';
+import {ExtendedNode} from "@table-library/react-table-library/types/table";
 
-const WeatherDataTable = ({data}) => {
-    const [refinedData, setRefinedData] = useState([])
+interface CCTVData {
+    model: string
+    coordX: string
+    imageKey: string
+    coordY: string
+    processedTime: string
+    cctvName: string
+    time: number
+    key: string
+    weather: string
+}
+
+interface RefinedCCTVData {
+    id: string
+    model: string
+    coordX: string
+    imageKey: string
+    coordY: string
+    processedTime: string
+    cctvName: string
+    time: number
+    key: string
+    weather: string
+    result: Result[]
+}
+
+interface Result {
+    model: string
+    weather: string
+}
+
+const WeatherDataTable = ({data}: { data: CCTVData[] }) => {
+    const [refinedData, setRefinedData] = useState<RefinedCCTVData[]>([])
     const theme = useTheme(getTheme());
     const imageUrl = 'https://weather-cctv-image-ecm.s3.ap-northeast-2.amazonaws.com'
 
@@ -13,6 +45,7 @@ const WeatherDataTable = ({data}) => {
         data.forEach((item) => {
             if (!dataMap.has(item.imageKey)) {
                 dataMap.set(item.imageKey, {
+                    id: item.cctvName,
                     cctvName: item.cctvName,
                     coordX: item.coordX,
                     coordY: item.coordY,
@@ -47,7 +80,7 @@ const WeatherDataTable = ({data}) => {
 
     return (
         <Table data={{nodes: refinedData}} theme={theme}>
-            {(tableList) => (
+            {(tableList: ExtendedNode<RefinedCCTVData>[]) => (
                 <>
                     <Header>
                         <HeaderRow>
@@ -60,7 +93,7 @@ const WeatherDataTable = ({data}) => {
                         </HeaderRow>
                     </Header>
                     <Body>
-                        {tableList.map((item) => (
+                        {tableList.map((item: RefinedCCTVData) => (
                             <Row key={item.imageKey} item={item}>
                                 <Cell>{item.cctvName}</Cell>
                                 <Cell>{item.imageKey}</Cell>
@@ -98,13 +131,13 @@ const WeatherDataTable = ({data}) => {
 
 function App() {
 
-    const [data, setData] = useState([])
+    const [data, setData] = useState<CCTVData[]>([])
 
     useEffect(() => {
         const getAPI = async () => {
             console.log('call API')
             const res = await fetch('https://6e2xh7ofyqw5wbpvemf6vl6cpa0kblqx.lambda-url.ap-northeast-2.on.aws')
-            res.json().then((data) => {
+            res.json().then((data: CCTVData[]) => {
                 setData(data.filter(d => !d.cctvName.includes('터널')))
             })
         };
@@ -114,7 +147,8 @@ function App() {
 
     return (
         <>
-            <h1 style={{display: "flex", justifyContent: "center", padding : "10px 0 30px 0"}}>CCTV를 이용한 실시간 날씨 정보 시스템</h1>
+            <h1 style={{display: "flex", justifyContent: "center", padding: "10px 0 30px 0"}}>CCTV를 이용한 실시간 날씨 정보
+                시스템</h1>
             {data.length > 0 && (
                 <div style={{textAlign: "center"}}>
                     <WeatherDataTable data={data}/>
